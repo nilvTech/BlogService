@@ -18,6 +18,20 @@ namespace BlogService.DataAccess.Respositories
         {
             return await _dbContext.BlogPosts.Include(p => p.Comments).FirstOrDefaultAsync(p => p.Id == id);
         }
+        public async Task<BlogPost> DeletePostAsync(int id)
+        {
+            var post = await _dbContext.BlogPosts.Include(p => p.Comments).FirstOrDefaultAsync(p => p.Id == id);
+
+            if (post == null)
+            {
+                return null;
+            }
+
+            _dbContext.BlogPosts.Remove(post);
+            await _dbContext.SaveChangesAsync();
+
+            return post;
+        }
 
     }
 }

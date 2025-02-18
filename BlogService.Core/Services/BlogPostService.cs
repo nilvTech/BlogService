@@ -35,6 +35,13 @@ namespace BlogService.Core.Services
             return await _blogPostRepository.FindByIdAsync(postId);
         }
 
+        public async Task<bool> DeletePostAsync(int id)
+        {
+
+            await _blogPostRepository.DeletePostAsync(id);
+            return true;
+        }
+
         public async Task<IEnumerable<BlogPost>> GetAllBlogsAsync(Expression<Func<BlogPost, bool>>? filter = null, string? includeProperties = null)
         {
             return await _blogPostRepository.GetAllAsync(includeProperties : nameof(BlogPost.Comments));
