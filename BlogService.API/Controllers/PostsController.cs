@@ -17,57 +17,129 @@ namespace BlogService.API.Controllers
             _blogPostService = blogPostService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreatePost([FromBody] BlogPostDTO postDTO)
+       // Create a new blog post
+    [HttpPost]
+    public async Task<IActionResult> CreatePost([FromBody] BlogPostDTO postDTO)
+    {
+        try
         {
-            try
-            {
-                var createdPost = await _blogPostService.CreatePostAsync(postDTO);
-                return CreatedAtAction(nameof(CreatePost), new { id = createdPost.Id }, createdPost);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
+            var createdPost = await _blogPostService.CreatePostAsync(postDTO);
+            return CreatedAtAction(nameof(GetPostById), new { id = createdPost.Id }, createdPost);
         }
-
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetPostById(int id)
+        catch (Exception ex)
         {
-            try
-            {
-                var post = await _blogPostService.GetPostByIdAsync(id);
-                if (post == null)
-                {
-                    return NotFound($"No Post Found with Id : {id}");
-                }
-                return Ok(post);
-            }
-            catch (Exception ex) 
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
         }
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllPosts()
+    // Get a blog post by ID
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetPostById(int id)
+    {
+        try
         {
-            try
-            {
-                var result = await _blogPostService.GetAllBlogsAsync();
+            var post = await _blogPostService.GetPostByIdAsync(id);
+            if (post == null)
+                return NotFound($"No Post Found with Id: {id}");
 
-                if(result == null)
-                {
-                    return NotFound("No Blogs Found");
-                }
-                return Ok(result);
-            }
-            catch(Exception ex) 
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
+            return Ok(post);
         }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+        }
+    }
+
+    // Get all blog posts
+    [HttpGet]
+    public async Task<IActionResult> GetAllPosts()
+    {
+        try
+        {
+            var result = await _blogPostService.GetAllBlogsAsync();
+            if (result == null || !result.Any())
+                return NotFound("No Blogs Found");
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+        }
+    }
+
+    // Update an existing blog post
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdatePost(int id, [FromBody] BlogPostDTO postDTO)
+    {
+        try
+        {
+            var updatedPost = await _blogPostService.UpdatePostAsync(id, postDTO);
+            if (updatedPost == null)
+                return NotFound($"No Post Found with Id: {id}");
+
+            return Ok(updatedPost);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+        }
+    }
+
+    // Delete a blog post
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeletePost(int id)
+    {
+        try
+        {
+            var isDeleted = await _blogPostService.DeletePostAsync(id);
+            if (!isDeleted)
+                return NotFound($"No Post Found with Id: {id}");
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+        }
+    }
+
+    // Search for blog posts by keyword
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchPosts([FromQuery] string keyword)
+    {
+        try
+        {
+            var results = await _blogPostService.SearchPostsAsync(keyword);
+            if (results == null || !results.Any())
+                return NotFound($"No posts found containing '{keyword}'");
+
+            return Ok(results);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+        }
+    }
+
+    // Get posts filtered by category
+    [HttpGet("category/{categoryName}")]
+    public async Task<IActionResult> GetPostsByCategory(string categoryName)
+    {
+        try
+        {
+            var results = await _blogPostService.GetPostsByCategoryAsync(categoryName);
+            if (results == null || !results.Any())
+                return NotFound($"No posts found in category '{categoryName}'");
+
+            return Ok(results);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+        }
+    }
+}
 
     }
 }
