@@ -1,7 +1,8 @@
-﻿using BlogService.Core.Services.Interfaces;
+using BlogService.Core.Services.Interfaces;
 using BlogService.DataAccess.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace BlogService.API.Controllers
 {
@@ -11,135 +12,138 @@ namespace BlogService.API.Controllers
     public class PostsController : ControllerBase
     {
         private readonly IBlogPostService _blogPostService;
+        private readonly ILogger<PostsController> _logger;
 
-        public PostsController(IBlogPostService blogPostService)
+        public PostsController(IBlogPostService blogPostService, ILogger<PostsController> logger)
         {
             _blogPostService = blogPostService;
+            _logger = logger;
         }
 
-       // Create a new blog post
-    [HttpPost]
-    public async Task<IActionResult> CreatePost([FromBody] BlogPostDTO postDTO)
-    {
-        try
+        /// <summary>
+        /// Create a new blog post.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CreatePost([FromBody] BlogPostDTO postDTO)
         {
-            var createdPost = await _blogPostService.CreatePostAsync(postDTO);
-            return CreatedAtAction(nameof(GetPostById), new { id = createdPost.Id }, createdPost);
+            try
+            {
+                var createdPost = await _blogPostService.CreatePostAsync(postDTO);
+                return CreatedAtAction(nameof(GetPostById), new { id = createdPost.Id }, createdPost);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating a post.");
+                return StatusCode(500, "An error occurred while creating the blog post.");
+            }
         }
-        catch (Exception ex)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-        }
-    }
 
-    // Get a blog post by ID
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetPostById(int id)
-    {
-        try
+        /// <summary>
+        /// Get a blog post by its ID.
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPostById(int id)
         {
-            var post = await _blogPostService.GetPostByIdAsync(id);
-            if (post == null)
-                return NotFound($"No Post Found with Id: {id}");
-
-            return Ok(post);
+            try
+            {
+                var post = await _blogPostService.GetPostByIdAsync(id);
+                return post != null ? Ok(post) : NotFound($"No post found with ID {id}.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving post with ID {id}.");
+                return StatusCode(500, "An error occurred while retrieving the post.");
+            }
         }
-        catch (Exception ex)
+
+        /// <summary>
+        /// Get all blog posts.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetAllPosts()
         {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            try
+            {
+                var posts = await _blogPostService.GetAllBlogsAsync();
+                return posts != null && posts.Any() ? Ok(posts) : NotFound("No blog posts found.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all posts.");
+                return StatusCode(500, "An error occurred while retrieving blog posts.");
+            }
         }
-    }
 
-    // Get all blog posts
-    [HttpGet]
-    public async Task<IActionResult> GetAllPosts()
-    {
-        try
+        /// <summary>
+        /// Update a blog post.
+        /// </summary>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePost(int id, [FromBody] BlogPostDTO postDTO)
         {
-            var result = await _blogPostService.GetAllBlogsAsync();
-            if (result == null || !result.Any())
-                return NotFound("No Blogs Found");
-
-            return Ok(result);
+            try
+            {
+                var updatedPost = await _blogPostService.UpdatePostAsync(id, postDTO);
+                return updatedPost != null ? Ok(updatedPost) : NotFound($"No post found with ID {id}.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating post with ID {id}.");
+                return StatusCode(500, "An error occurred while updating the post.");
+            }
         }
-        catch (Exception ex)
+
+        /// <summary>
+        /// Delete a blog post by ID.
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePost(int id)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            try
+            {
+                var deleted = await _blogPostService.DeletePostAsync(id);
+                return deleted ? NoContent() : NotFound($"No post found with ID {id}.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error deleting post with ID {id}.");
+                return StatusCode(500, "An error occurred while deleting the post.");
+            }
         }
-    }
 
-    // Update an existing blog post
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdatePost(int id, [FromBody] BlogPostDTO postDTO)
-    {
-        try
+        /// <summary>
+        /// Search blog posts by keyword.
+        /// </summary>
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchPosts([FromQuery] string keyword)
         {
-            var updatedPost = await _blogPostService.UpdatePostAsync(id, postDTO);
-            if (updatedPost == null)
-                return NotFound($"No Post Found with Id: {id}");
-
-            return Ok(updatedPost);
+            try
+            {
+                var results = await _blogPostService.SearchPostsAsync(keyword);
+                return results != null && results.Any() ? Ok(results) : NotFound($"No posts found containing '{keyword}'.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error searching posts with keyword '{keyword}'.");
+                return StatusCode(500, "An error occurred while searching blog posts.");
+            }
         }
-        catch (Exception ex)
+
+        /// <summary>
+        /// Get posts by category name.
+        /// </summary>
+        [HttpGet("category/{categoryName}")]
+        public async Task<IActionResult> GetPostsByCategory(string categoryName)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            try
+            {
+                var results = await _blogPostService.GetPostsByCategoryAsync(categoryName);
+                return results != null && results.Any() ? Ok(results) : NotFound($"No posts found in category '{categoryName}'.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving posts for category '{categoryName}'.");
+                return StatusCode(500, "An error occurred while retrieving posts by category.");
+            }
         }
-    }
-
-    // Delete a blog post
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeletePost(int id)
-    {
-        try
-        {
-            var isDeleted = await _blogPostService.DeletePostAsync(id);
-            if (!isDeleted)
-                return NotFound($"No Post Found with Id: {id}");
-
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-        }
-    }
-
-    // Search for blog posts by keyword
-    [HttpGet("search")]
-    public async Task<IActionResult> SearchPosts([FromQuery] string keyword)
-    {
-        try
-        {
-            var results = await _blogPostService.SearchPostsAsync(keyword);
-            if (results == null || !results.Any())
-                return NotFound($"No posts found containing '{keyword}'");
-
-            return Ok(results);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-        }
-    }
-
-    // Get posts filtered by category
-    [HttpGet("category/{categoryName}")]
-    public async Task<IActionResult> GetPostsByCategory(string categoryName)
-    {
-        try
-        {
-            var results = await _blogPostService.GetPostsByCategoryAsync(categoryName);
-            if (results == null || !results.Any())
-                return NotFound($"No posts found in category '{categoryName}'");
-
-            return Ok(results);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-        }
-    }
-}
-
     }
 }
