@@ -1,4 +1,4 @@
-﻿using BlogService.Core.Services.Interfaces;
+using BlogService.Core.Services.Interfaces;
 using BlogService.DataAccess.DTOs;
 using BlogService.DataAccess.Models;
 using BlogService.DataAccess.Respositories.Interfaces;
@@ -26,27 +26,18 @@ namespace BlogService.Core.Services
                 Comments = new List<Comment>()
             };
 
-            var createdPost = await _blogPostRepository.CreateAsync(newPost);
-            return createdPost;
+            return await _blogPostRepository.CreateAsync(newPost);
         }
 
-        public async Task<BlogPost> GetPostByIdAsync(int postId)
-        {
-            return await _blogPostRepository.FindByIdAsync(postId);
-        }
+        public Task<BlogPost> GetPostByIdAsync(int postId) =>
+            _blogPostRepository.FindByIdAsync(postId);
 
-        public async Task<bool> DeletePostAsync(int id)
-        {
+        public Task DeletePostAsync(int id) =>
+            _blogPostRepository.DeletePostAsync(id);
 
-            await _blogPostRepository.DeletePostAsync(id);
-            return true;
-        }
-
-        public async Task<IEnumerable<BlogPost>> GetAllBlogsAsync(Expression<Func<BlogPost, bool>>? filter = null, string? includeProperties = null)
-        {
-            return await _blogPostRepository.GetAllAsync(includeProperties : nameof(BlogPost.Comments));
-        }
-
-
+        public Task<IEnumerable<BlogPost>> GetAllBlogsAsync(
+            Expression<Func<BlogPost, bool>>? filter = null,
+            string? includeProperties = null) =>
+            _blogPostRepository.GetAllAsync(includeProperties: nameof(BlogPost.Comments));
     }
 }
