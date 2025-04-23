@@ -145,5 +145,60 @@ namespace BlogService.API.Controllers
                 return StatusCode(500, "An error occurred while retrieving posts by category.");
             }
         }
+
+        /// <summary>
+/// Get the latest N blog posts.
+/// </summary>
+[HttpGet("recent/{count}")]
+public async Task<IActionResult> GetRecentPosts(int count)
+{
+    try
+    {
+        var results = await _blogPostService.GetRecentPostsAsync(count);
+        return results != null && results.Any() ? Ok(results) : NotFound("No recent blog posts found.");
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, $"Error retrieving recent {count} blog posts.");
+        return StatusCode(500, "An error occurred while retrieving recent posts.");
+    }
+}
+
+/// <summary>
+/// Publish a blog post (change status from draft to published).
+/// </summary>
+[HttpPut("{id}/publish")]
+public async Task<IActionResult> PublishPost(int id)
+{
+    try
+    {
+        var success = await _blogPostService.PublishPostAsync(id);
+        return success ? Ok(new { Message = "Post published successfully." }) : NotFound($"No post found with ID {id}.");
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, $"Error publishing post with ID {id}.");
+        return StatusCode(500, "An error occurred while publishing the post.");
+    }
+}
+
+/// <summary>
+/// Get all posts authored by a specific author.
+/// </summary>
+[HttpGet("author/{authorName}")]
+public async Task<IActionResult> GetPostsByAuthor(string authorName)
+{
+    try
+    {
+        var results = await _blogPostService.GetPostsByAuthorAsync(authorName);
+        return results != null && results.Any() ? Ok(results) : NotFound($"No posts found for author '{authorName}'.");
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, $"Error retrieving posts for author '{authorName}'.");
+        return StatusCode(500, "An error occurred while retrieving posts by author.");
+    }
+}
+
     }
 }
