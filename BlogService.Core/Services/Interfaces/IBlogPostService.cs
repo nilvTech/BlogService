@@ -10,7 +10,9 @@ namespace BlogService.Core.Services.Interfaces
         Task<BlogPost> GetPostByIdAsync(int id);
         Task<IEnumerable<BlogPost>> GetAllBlogsAsync(Expression<Func<BlogPost, bool>>? filter = null, string? includeProperties = null);
         // Update
-       
+               Task<IEnumerable<BlogPost>> GetRecentPostsAsync(int count);
+            Task<bool> PublishPostAsync(int postId);
+            Task<IEnumerable<BlogPost>> GetPostsByAuthorAsync(string authorName);
 
         // Delete
         Task<bool> DeletePostAsync(int id);
